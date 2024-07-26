@@ -18,6 +18,7 @@ For the example to run the following hardware is needed:
 import logging
 import sys
 import time
+import random
 
 import cflib.crtp
 from cflib.crazyflie import Crazyflie
@@ -89,6 +90,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
         self.gridLabel = QtWidgets.QLabel(self)
         self.gridLabel.setGeometry(50, 50, 600, 600)
         self.obstacles = set()  # Set to store obstacle positions
+        self.updateGrid(GRID_SIZE // 2, GRID_SIZE // 2)
         self.updateGrid(30, 30)  # Start with the drone at the center
 
         self.drone_x = 30
@@ -146,6 +148,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
         except AttributeError:
             print('Could not add Position log config, bad configuration.')
 
+# this function is in charge of keeping track of the Crazyflie drone position in the air
     def pos_data(self, timestamp, data, logconf):
         x = data['stateEstimate.x']
         y = data['stateEstimate.y']
@@ -158,6 +161,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
         # Update the grid with the new drone position
         self.updateGrid(self.drone_x, self.drone_y)
 
+#this function is in charge of using the multi ranger to track the distances between the obstacles
     def multi_data(self, timestamp, data, logconf):
         front = data['range.front'] / 1000  # Convert mm to meters
         back = data['range.back'] / 1000  # Convert mm to meters
@@ -172,13 +176,22 @@ class CrazyflieController(QtWidgets.QMainWindow):
         # Add obstacles to the grid based on the sensor data
         self.obstacles.clear()
         if front < OBSTACLE_THRESHOLD:
-            self.obstacles.add((self.drone_x, self.drone_y - int(front * 10)))
+            front_obstacle = (self.drone_x, self.drone_y - int(front * 10))
+            self.obstacles.add(front_obstacle)
+            # should give the X, Y coordinates of the obstacles so that we can collect the data
+            print(f'Obstacle detected at: {front_obstacle[0]},{front_obstacle[1]}') 
         if back < OBSTACLE_THRESHOLD:
-            self.obstacles.add((self.drone_x, self.drone_y + int(back * 10)))
+            back_obstacle = (self.drone_x, self.drone_y + int(back * 10))
+            self.obstacles.add(back_obstacle)
+            print(f'Obstacle detected at: {back_obstacle[0]}, {back_obstacle[1]}')
         if left < OBSTACLE_THRESHOLD:
-            self.obstacles.add((self.drone_x - int(left * 10), self.drone_y))
+            left_obstacle = (self.drone_x - int(left * 10), self.drone_y)
+            self.obstacles.add(left_obstacle)
+            print(f'Obstacle detected at: {left_obstacle[0]}, {left_obstacle[1]}')
         if right < OBSTACLE_THRESHOLD:
-            self.obstacles.add((self.drone_x + int(right * 10), self.drone_y))
+            right_obstacle = (self.drone_x + int(right * 10), self.drone_y)  # Fix the tuple
+            self.obstacles.add(right_obstacle)
+            print(f'Obstacle detected at: {right_obstacle[0]}, {right_obstacle[1]}')
 
         self.updateGrid(self.drone_x, self.drone_y)
 
