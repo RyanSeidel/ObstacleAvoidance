@@ -1,10 +1,14 @@
 import sys
 from PyQt6 import QtCore, QtWidgets, QtGui
+import threading
+import time
+import random
 
 # Constants for the grid size and speed factor
 GRID_SIZE = 61
 SPEED_FACTOR = 1  # Adjust the speed factor as needed
-DETECTION_RANGE = 30  # Detection range for the player
+DETECTION_RANGE = 30  # Detection range for the obstacle
+CLOSE_RANGE = 7  # Distance at which the player makes a decision
 
 class PlayerController(QtWidgets.QMainWindow):
 
@@ -15,7 +19,8 @@ class PlayerController(QtWidgets.QMainWindow):
         self.setWindowTitle('2D GRID')
 
         self.player = {'x': 30, 'y': 30}
-        self.obstacle = {'x': 30, 'y': 50}
+        self.obstacle = {'x': 30, 'y': 10}
+        self.obstacle_direction = 'DOWN'
 
         # Add a QLabel widget for displaying the grid
         self.gridLabel = QtWidgets.QLabel(self)
@@ -24,22 +29,20 @@ class PlayerController(QtWidgets.QMainWindow):
 
         # Timer for continuous movement
         self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.movePlayer)
+        self.timer.timeout.connect(self.moveObstacle)
         self.timer.start(100)  # Adjust the interval as needed
 
         self.activeKeys = set()
 
-    def movePlayer(self):
-        for key in self.activeKeys:
-            if key == QtCore.Qt.Key.Key_W:
-                self.updatePlayerPosition('y', -SPEED_FACTOR)
-            if key == QtCore.Qt.Key.Key_S:
-                self.updatePlayerPosition('y', SPEED_FACTOR)
-            if key == QtCore.Qt.Key.Key_A:
-                self.updatePlayerPosition('x', -SPEED_FACTOR)
-            if key == QtCore.Qt.Key.Key_D:
-                self.updatePlayerPosition('x', SPEED_FACTOR)
-        self.detectObstacles()
+        # Start a thread for obstacle detection and player movement
+        self.stop_event = threading.Event()
+        self.thread = threading.Thread(target=self.autonomousMovement)
+        self.thread.start()
+
+    def moveObstacle(self):
+        # Move the obstacle straight down
+        self.updateObstaclePosition('y', SPEED_FACTOR)
+        self.obstacle_direction = 'DOWN'  # Since the obstacle always moves down
 
     def updatePlayerPosition(self, k, v):
         new_x = self.player['x']
@@ -50,10 +53,24 @@ class PlayerController(QtWidgets.QMainWindow):
         elif k == 'y':
             new_y = max(0, min(GRID_SIZE - 1, self.player['y'] + v))
         
-        if (new_x, new_y) != (self.obstacle['x'], self.obstacle['y']):
+        if not self.isObstacle(new_x, new_y):
             self.player['x'] = new_x
             self.player['y'] = new_y
         
+        self.updateGrid(self.player['x'], self.player['y'])
+
+    def updateObstaclePosition(self, k, v):
+        new_x = self.obstacle['x']
+        new_y = self.obstacle['y']
+        
+        if k == 'x':
+            new_x = max(0, min(GRID_SIZE - 1, self.obstacle['x'] + v))
+        elif k == 'y':
+            new_y = max(0, min(GRID_SIZE - 1, self.obstacle['y'] + v))
+        
+        self.obstacle['x'] = new_x
+        self.obstacle['y'] = new_y
+
         self.updateGrid(self.player['x'], self.player['y'])
 
     def detectObstacles(self):
@@ -66,15 +83,21 @@ class PlayerController(QtWidgets.QMainWindow):
             distance = abs(player_y - obstacle_y)
             if player_y < obstacle_y:
                 print(f"Obstacle detected in front! Distance: {distance}")
+                return 'front', distance
             elif player_y > obstacle_y:
                 print(f"Obstacle detected in back! Distance: {distance}")
+                return 'back', distance
         
         if player_y == obstacle_y and abs(player_x - obstacle_x) <= DETECTION_RANGE:
             distance = abs(player_x - obstacle_x)
             if player_x < obstacle_x:
                 print(f"Obstacle detected to the right! Distance: {distance}")
+                return 'right', distance
             elif player_x > obstacle_x:
                 print(f"Obstacle detected to the left! Distance: {distance}")
+                return 'left', distance
+        
+        return None, None
 
     def updateGrid(self, player_x, player_y):
         pixmap = QtGui.QPixmap(610, 610)
@@ -104,6 +127,34 @@ class PlayerController(QtWidgets.QMainWindow):
 
         self.gridLabel.setPixmap(pixmap)
 
+    def autonomousMovement(self):
+        while not self.stop_event.is_set():
+            direction, distance = self.detectObstacles()
+
+            if direction and distance <= CLOSE_RANGE:
+                if direction in ['left', 'right']:
+                    if self.obstacle_direction == 'DOWN':
+                        self.updatePlayerPosition('y', -SPEED_FACTOR)
+                    elif self.obstacle_direction == 'UP':
+                        self.updatePlayerPosition('y', SPEED_FACTOR)
+                elif direction == 'front':
+                    if random.choice(['left', 'right']) == 'left':
+                        self.updatePlayerPosition('x', -SPEED_FACTOR)
+                    else:
+                        self.updatePlayerPosition('x', SPEED_FACTOR)
+                elif direction == 'back':
+                    if random.choice(['left', 'right']) == 'left':
+                        self.updatePlayerPosition('x', -SPEED_FACTOR)
+                    else:
+                        self.updatePlayerPosition('x', SPEED_FACTOR)
+            else:
+                moving_direction = None
+
+            time.sleep(0.1)
+
+    def isObstacle(self, x, y):
+        return x == self.obstacle['x'] and y == self.obstacle['y']
+
     def keyPressEvent(self, event):
         if not event.isAutoRepeat():
             self.activeKeys.add(event.key())
@@ -111,6 +162,10 @@ class PlayerController(QtWidgets.QMainWindow):
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
             self.activeKeys.discard(event.key())
+
+    def closeEvent(self, event):
+        self.stop_event.set()
+        self.thread.join()
 
 if __name__ == '__main__':
     appQt = QtWidgets.QApplication(sys.argv)
