@@ -164,16 +164,15 @@ class CrazyflieController(QtWidgets.QMainWindow):
 
 
     # Define a method to move the drone left or right
-    def move_drone(self, direction, distance):
+    def move_drone(self, direction):
         if direction == 'left':
             self.updateHover('y', -1)
-            time.sleep(.5)
-            self.updateHover('y', 0)
+            time.sleep(1)
+              
         elif direction == 'right':
             self.updateHover('y', 1)
-            time.sleep(.5)
-            self.updateHover('y', 0)
-        
+            time.sleep(1)
+                        
 
 #this function is in charge of using the multi ranger to track the distances between the obstacles
     def multi_data(self, timestamp, data, logconf):
@@ -206,10 +205,14 @@ class CrazyflieController(QtWidgets.QMainWindow):
             #     direction = random.choice(['left', 'right'])
             #     self.move_drone(direction, MOVE_DISTANCE)
 
-            if abs(front_distance_y) < 7 and abs(front_distance_y) > 0:
-                # Randomly choose direction to move: left or right
-                direction = random.choice(['left', 'right'])
-                self.move_drone(direction, MOVE_DISTANCE)
+            # Check for obstacle in the y direction and move accordingly
+            if 0 < abs(front_distance_y) < 7:
+                direction = random.choice(['left'])
+                self.move_drone(direction)
+
+            self.updateHover('y', 0)
+        else:
+            print('No obstacles nearby. Drone is hovering.')
 
 
         if back < OBSTACLE_THRESHOLD:
