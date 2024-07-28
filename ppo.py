@@ -33,38 +33,68 @@ class GridEnvironment(gym.Env):
         self.seed(seed)
         self.player = {'x': 30, 'y': 30}
         self.obstacles = [
-            {'x': 30, 'y': 10, 'direction': 'DOWN'},
-            {'x': 50, 'y': 29, 'direction': 'LEFT', 'start_time': time.time() + 8},
-            {'x': 32, 'y': 40, 'direction': 'UP', 'start_time': time.time() + 12}
-        ]
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
+]
+        self.goal = {'x': 50, 'y': 50}  # Example goal position
         return np.array([self.player['x'], self.player['y']]), {}
 
     def step(self, action):
         if action == 0:  # Up
-            self.player['y'] = max(0, self.player['y'] - 1)
+            new_y = max(0, self.player['y'] - 1)
+            new_x = self.player['x']
         elif action == 1:  # Down
-            self.player['y'] = min(self.grid_size - 1, self.player['y'] + 1)
+            new_y = min(self.grid_size - 1, self.player['y'] + 1)
+            new_x = self.player['x']
         elif action == 2:  # Left
-            self.player['x'] = max(0, self.player['x'] - 1)
+            new_x = max(0, self.player['x'] - 1)
+            new_y = self.player['y']
         elif action == 3:  # Right
-            self.player['x'] = min(self.grid_size - 1, self.player['x'] + 1)
+            new_x = min(self.grid_size - 1, self.player['x'] + 1)
+            new_y = self.player['y']
         
+        if not self.isObstacle(new_x, new_y):
+            self.player['x'] = new_x
+            self.player['y'] = new_y
+
         reward = self.calculate_reward()
         done = self.check_done()
         
         info = {}
-        terminated = done  # You can use the same variable if you don't have a separate condition
-        truncated = False  # Set this to True if you have a max episode length or similar
+        terminated = done
+        truncated = False
         
         return np.array([self.player['x'], self.player['y']]), reward, terminated, truncated, info
 
     def calculate_reward(self):
-        # Implement your reward logic here
-        return 0
+        if self.isObstacle(self.player['x'], self.player['y']):
+            return -10  # Penalize for collision
+        if self.player['x'] == self.goal['x'] and self.player['y'] == self.goal['y']:
+            return 10  # Reward for reaching the goal
+        return 1  # Small reward for valid moves
 
     def check_done(self):
-        # Implement your logic to check if the episode is done
+        if self.isObstacle(self.player['x'], self.player['y']):
+            return True  # End episode if collision
+        if self.player['x'] == self.goal['x'] and self.player['y'] == self.goal['y']:
+            return True  # End episode if goal is reached
         return False
+
+    def isObstacle(self, x, y):
+        return any(obstacle['x'] == x and obstacle['y'] == y for obstacle in self.obstacles)
 
     def detect_obstacles(self):
         player_x = self.player['x']
@@ -78,16 +108,16 @@ class GridEnvironment(gym.Env):
             if player_x == obstacle_x and abs(player_y - obstacle_y) <= DETECTION_RANGE:
                 distance = abs(player_y - obstacle_y)
                 if player_y < obstacle_y:
-                    detected.append(('front', distance, obstacle['direction']))
+                    detected.append(('front', distance, 'DOWN'))
                 elif player_y > obstacle_y:
-                    detected.append(('back', distance, obstacle['direction']))
+                    detected.append(('back', distance, 'UP'))
             
             if player_y == obstacle_y and abs(player_x - obstacle_x) <= DETECTION_RANGE:
                 distance = abs(player_x - obstacle_x)
                 if player_x < obstacle_x:
-                    detected.append(('right', distance, obstacle['direction']))
+                    detected.append(('right', distance, 'LEFT'))
                 elif player_x > obstacle_x:
-                    detected.append(('left', distance, obstacle['direction']))
+                    detected.append(('left', distance, 'RIGHT'))
         
         return detected
 
@@ -112,10 +142,24 @@ class PlayerController(QtWidgets.QMainWindow):
 
         self.player = {'x': 30, 'y': 30}
         self.obstacles = [
-            {'x': 30, 'y': 10, 'direction': 'DOWN'},
-            {'x': 50, 'y': 29, 'direction': 'LEFT', 'start_time': time.time() + 8},
-            {'x': 32, 'y': 40, 'direction': 'UP', 'start_time': time.time() + 12}
-        ]
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
+    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
+]
+
+        self.goal = {'x': 50, 'y': 50}
 
         self.gridLabel = QtWidgets.QLabel(self)
         self.gridLabel.setGeometry(50, 50, 600, 600)
@@ -135,12 +179,15 @@ class PlayerController(QtWidgets.QMainWindow):
         for obstacle in self.obstacles:
             if 'start_time' in obstacle and current_time < obstacle['start_time']:
                 continue  # Skip moving this obstacle until the start time is reached
-            if obstacle['direction'] == 'DOWN':
+            direction = obstacle['direction']
+            if direction == 'DOWN':
                 self.updateObstaclePosition(obstacle, 'y', SPEED_FACTOR)
-            elif obstacle['direction'] == 'UP':
+            elif direction == 'UP':
                 self.updateObstaclePosition(obstacle, 'y', -SPEED_FACTOR)
-            elif obstacle['direction'] == 'LEFT':
+            elif direction == 'LEFT':
                 self.updateObstaclePosition(obstacle, 'x', -SPEED_FACTOR)
+            elif direction == 'RIGHT':
+                self.updateObstaclePosition(obstacle, 'x', SPEED_FACTOR)
 
     def updatePlayerPosition(self, k, v):
         new_x = self.player['x']
@@ -184,19 +231,19 @@ class PlayerController(QtWidgets.QMainWindow):
                 distance = abs(player_y - obstacle_y)
                 if player_y < obstacle_y:
                     print(f"Obstacle detected in front! Distance: {distance}")
-                    detected.append(('front', distance, obstacle['direction']))
+                    detected.append(('front', distance, 'DOWN'))
                 elif player_y > obstacle_y:
                     print(f"Obstacle detected in back! Distance: {distance}")
-                    detected.append(('back', distance, obstacle['direction']))
+                    detected.append(('back', distance, 'UP'))
             
             if player_y == obstacle_y and abs(player_x - obstacle_x) <= DETECTION_RANGE:
                 distance = abs(player_x - obstacle_x)
                 if player_x < obstacle_x:
                     print(f"Obstacle detected to the right! Distance: {distance}")
-                    detected.append(('right', distance, obstacle['direction']))
+                    detected.append(('right', distance, 'LEFT'))
                 elif player_x > obstacle_x:
                     print(f"Obstacle detected to the left! Distance: {distance}")
-                    detected.append(('left', distance, obstacle['direction']))
+                    detected.append(('left', distance, 'RIGHT'))
         
         return detected
 
@@ -225,6 +272,11 @@ class PlayerController(QtWidgets.QMainWindow):
         painter.setPen(pen)
         painter.drawText(player_x * 10, player_y * 10, 'X')
 
+        # Draw the goal position
+        pen.setColor(QtCore.Qt.GlobalColor.green)
+        painter.setPen(pen)
+        painter.drawText(self.goal['x'] * 10, self.goal['y'] * 10, 'G')
+
         painter.end()
 
         self.gridLabel.setPixmap(pixmap)
@@ -247,6 +299,11 @@ class PlayerController(QtWidgets.QMainWindow):
             self.player['x'] = max(0, self.player['x'] - 1)
         elif action == 3:  # Right
             self.player['x'] = min(GRID_SIZE - 1, self.player['x'] + 1)
+        
+        if self.isObstacle(self.player['x'], self.player['y']):
+            print("Collision detected! Penalizing and stopping episode.")
+            self.updateGrid(self.player['x'], self.player['y'])
+            return  # End the step if collision happens
         
         self.updateGrid(self.player['x'], self.player['y'])
 
