@@ -33,24 +33,11 @@ class GridEnvironment(gym.Env):
         self.seed(seed)
         self.player = {'x': 30, 'y': 30}
         self.obstacles = [
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
-]
+            {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
+            for _ in range(15)
+        ]
         self.goal = {'x': 50, 'y': 50}  # Example goal position
-        return np.array([self.player['x'], self.player['y']]), {}
+        return np.array([self.player['x'], self.player['y']], dtype=np.int32), {}
 
     def step(self, action):
         if action == 0:  # Up
@@ -77,7 +64,7 @@ class GridEnvironment(gym.Env):
         terminated = done
         truncated = False
         
-        return np.array([self.player['x'], self.player['y']]), reward, terminated, truncated, info
+        return np.array([self.player['x'], self.player['y']], dtype=np.int32), reward, terminated, truncated, info
 
     def calculate_reward(self):
         if self.isObstacle(self.player['x'], self.player['y']):
@@ -142,22 +129,9 @@ class PlayerController(QtWidgets.QMainWindow):
 
         self.player = {'x': 30, 'y': 30}
         self.obstacles = [
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)},
-    {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
-]
+            {'x': random.randint(0, GRID_SIZE-1), 'y': random.randint(0, GRID_SIZE-1), 'direction': random.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), 'start_time': time.time() + random.randint(0, 15)}
+            for _ in range(15)
+        ]
 
         self.goal = {'x': 50, 'y': 50}
 
@@ -285,7 +259,7 @@ class PlayerController(QtWidgets.QMainWindow):
         while not self.stop_event.is_set():
             detected_obstacles = self.detectObstacles()
             if detected_obstacles:
-                state = np.array([self.player['x'], self.player['y']])
+                state = np.array([self.player['x'], self.player['y']], dtype=np.int32)
                 action, _states = self.model.predict(state)
                 self.step(action)
             time.sleep(0.1)
