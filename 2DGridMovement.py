@@ -180,18 +180,18 @@ class CrazyflieController(QtWidgets.QMainWindow):
             self.obstacles.add((right_obstacle_x, right_obstacle_y))
 
     def autonomousMovement(self):
-        while True:
-            detected_obstacles = list(self.obstacles)
+        while True: # Infinite loop
+            detected_obstacles = list(self.obstacles) # Turn the obstacles set into a list
 
             #DEBUG PRINT THE LIST
-
             print("Detected obstacles:", detected_obstacles)
 
+            # Assign either -1 or 1 to direction_x and direction_y
             direction_x = random.choice([-1, 1])
             direction_y = random.choice([-1, 1])
 
-            if detected_obstacles:
-                for ox, oy in detected_obstacles:
+            if detected_obstacles: # If obstacles are detected...
+                for ox, oy in detected_obstacles: # Iterate through every set of obstacles (but a decision is only made PER obstacle so why a for loop?)
                     # this make sure that the drone is within the distance of the obstacle
                     if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE:
                         # if detected on front or back side
