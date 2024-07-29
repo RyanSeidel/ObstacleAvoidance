@@ -21,7 +21,7 @@ from PyQt6 import QtCore, QtWidgets, QtGui
 
 logging.basicConfig(level=logging.INFO)
 
-URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E703')
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E705')
 
 if len(sys.argv) > 1:
     URI = sys.argv[1]
@@ -143,10 +143,10 @@ class CrazyflieController(QtWidgets.QMainWindow):
         self.sensor_data['left'] = data['range.left'] / 1000  # Convert mm to meters
         self.sensor_data['right'] = data['range.right'] / 1000  # Convert mm to meters
 
-        print(f'front: {self.sensor_data["front"]} meters')
-        print(f'back: {self.sensor_data["back"]} meters')
-        print(f'left: {self.sensor_data["left"]} meters')
-        print(f'right: {self.sensor_data["right"]} meters')
+        # print(f'front: {self.sensor_data["front"]} meters')
+        # print(f'back: {self.sensor_data["back"]} meters')
+        # print(f'left: {self.sensor_data["left"]} meters')
+        # print(f'right: {self.sensor_data["right"]} meters')
 
         self.detectObstacles()
         self.updateGrid(self.drone_x, self.drone_y)
@@ -183,22 +183,30 @@ class CrazyflieController(QtWidgets.QMainWindow):
         while True:
             detected_obstacles = list(self.obstacles)
 
+            #DEBUG PRINT THE LIST
+
+            print("Detected obstacles:", detected_obstacles)
+
+            direction_x = random.choice([-1, 1])
+            direction_y = random.choice([-1, 1])
+
             if detected_obstacles:
                 for ox, oy in detected_obstacles:
+                    # this make sure that the drone is within the distance of the obstacle
                     if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE:
-                        # x is the front..? 
+                        # if detected on front or back side
                         if ox < self.drone_x or ox > self.drone_x:
-                            direction_x = random.choice([-1, 1])
-                            self.updateHover('x', direction_x)  # Move right
+                            self.updateHover('x', direction_x)  # Move right/left
+                            time.sleep(1.25)
+                        # if detected on left or right side    
                         if oy < self.drone_y or oy > self.drone_y:
-                            direction_y = random.choice([-1, 1])
-                            self.updateHover('y', direction_y)  # Move forward
-                        
+                            self.updateHover('y', direction_y)  # Move forward/downward
+                            time.sleep(1.25)
             else:
                 self.updateHover('x', 0)
                 self.updateHover('y', 0)
 
-            time.sleep(1.35)
+
 
     def updateGrid(self, drone_x, drone_y):
         pixmap = QtGui.QPixmap(610, 610)
