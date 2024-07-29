@@ -192,6 +192,36 @@ class CrazyflieController(QtWidgets.QMainWindow):
             right_obstacle = (self.drone_x + int(right * 10), self.drone_y)  # Fix the tuple
             self.obstacles.add(right_obstacle)
             print(f'Obstacle detected at: {right_obstacle[0]}, {right_obstacle[1]}')
+    
+         # Obstacle avoidance logic
+        velocity_x = 0.0
+        velocity_y = 0.0
+        MIN_DISTANCE = 0.5  # meters
+
+        # Determine if any obstacle is detected
+        obstacle_detected = False
+        # Update velocities based on detected obstacles
+        if front < MIN_DISTANCE:
+            velocity_x -= SPEED_FACTOR
+            obstacle_detected = True
+        if back < MIN_DISTANCE:
+            velocity_x += SPEED_FACTOR
+            obstacle_detected = True
+        if left < MIN_DISTANCE:
+            velocity_y -= SPEED_FACTOR
+            obstacle_detected = True
+        if right < MIN_DISTANCE:
+            velocity_y += SPEED_FACTOR
+            obstacle_detected = True
+
+        # Stop movement if no obstacle is detected
+        if not obstacle_detected:
+            velocity_x = 0.0
+            velocity_y = 0.0
+
+        # Apply the calculated avoidance velocities
+        self.hover['x'] += velocity_x
+        self.hover['y'] += velocity_y
 
         self.updateGrid(self.drone_x, self.drone_y)
 
@@ -267,9 +297,9 @@ class CrazyflieController(QtWidgets.QMainWindow):
                 self.updateHover('height', 0)
 
 if __name__ == '__main__':
-    appQt = QtWidgets.QApplication(sys.argv)
-    mainWindow = CrazyflieController(URI)
+    appQt = QtWidgets.QApplication(sys.argv) # Creating window using PyQt6 library
+    mainWindow = CrazyflieController(URI) # Creating instance of CrazyflieController class and calling it mainWindow
    
-    mainWindow.show()
-    
-    sys.exit(appQt.exec())
+    mainWindow.show() # Making the created window visible to the user
+     
+    sys.exit(appQt.exec()) # "Don't close program until wiondow is exitted out of."

@@ -49,15 +49,17 @@ OBSTACLE_THRESHOLD = 0.5  # Distance threshold in meters
 class CrazyflieController(QtWidgets.QMainWindow):
 
     def __init__(self, URI):
-        super().__init__()
+        super().__init__() # Super constructor (Executes QMainWindow constructor)
 
-        self.resize(700, 700)
-        self.setWindowTitle('Multi-ranger 2D GRID')
+        self.resize(700, 700) # Resize the window
+        self.setWindowTitle('Multi-ranger 2D GRID') # Name the window
 
-        cflib.crtp.init_drivers()
+        # Initialize Crazyflie 
+        cflib.crtp.init_drivers() 
         self.cf = Crazyflie(ro_cache=None, rw_cache='cache')
 
         # Connect callbacks from the Crazyflie API
+            # CrazyflieController class -> Crazyflie class -> Caller class
         self.cf.connected.add_callback(self.connected)
         self.cf.disconnected.add_callback(self.disconnected)
 
