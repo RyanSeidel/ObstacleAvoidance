@@ -21,7 +21,7 @@ from PyQt6 import QtCore, QtWidgets, QtGui
 
 logging.basicConfig(level=logging.INFO)
 
-URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E705')
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E703')
 
 if len(sys.argv) > 1:
     URI = sys.argv[1]
@@ -34,6 +34,7 @@ GRID_SIZE = 61
 OBSTACLE_THRESHOLD = 3.0  # Distance threshold in meters
 MOVE_DISTANCE = 3
 CLOSE_RANGE = 10  # Distance at which the player makes a decision
+CONTINUE_DISTANCE = 1 # Closest distance to last obstacle
 
 class CrazyflieController(QtWidgets.QMainWindow):
 
@@ -64,8 +65,14 @@ class CrazyflieController(QtWidgets.QMainWindow):
         self.gridLabel = QtWidgets.QLabel(self)
         self.gridLabel.setGeometry(50, 50, 600, 600)
         self.obstacles = set()  # Set to store obstacle positions
-        self.updateGrid(GRID_SIZE // 2, GRID_SIZE // 2)
+        
+        # self.updateGrid(GRID_SIZE // 2, GRID_SIZE // 2)
         self.updateGrid(30, 30)  # Start with the drone at the center
+
+        self.last_obstacle_x = None  # Store the last obstacle's x position
+        self.last_obstacle_y = None  # Store the last obstacle's y position
+        self.last_choice_y = None
+        self.last_choice_x = None
 
         self.drone_x = 30
         self.drone_y = 30
@@ -129,8 +136,8 @@ class CrazyflieController(QtWidgets.QMainWindow):
         x = data['stateEstimate.x']
         y = data['stateEstimate.y']
         # Transform the coordinates to fit the grid
-        self.drone_x = int(x * 10) + 30  # Convert meters to grid units and center
-        self.drone_y = int(y * 10) + 30  # Convert meters to grid units and center
+        self.drone_x = abs(round(x * 10) + 30)  # Convert meters to grid units and center
+        self.drone_y = abs(round(y * 10) + 30)  # Convert meters to grid units and center
         # Ensure the coordinates are within bounds
         self.drone_x = max(0, min(60, self.drone_x))
         self.drone_y = max(0, min(60, self.drone_y))
@@ -185,27 +192,36 @@ class CrazyflieController(QtWidgets.QMainWindow):
 
             #DEBUG PRINT THE LIST
 
-            print("Detected obstacles:", detected_obstacles)
-
-            direction_x = random.choice([-1, 1])
-            direction_y = random.choice([-1, 1])
+            #print("Detected obstacles:", detected_obstacles)
 
             if detected_obstacles:
-                for ox, oy in detected_obstacles:
-                    # this make sure that the drone is within the distance of the obstacle
-                    if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE:
-                        # if detected on front or back side
-                        if ox < self.drone_x or ox > self.drone_x:
-                            self.updateHover('x', direction_x)  # Move right/left
-                            time.sleep(1.25)
-                        # if detected on left or right side    
-                        if oy < self.drone_y or oy > self.drone_y:
-                            self.updateHover('y', direction_y)  # Move forward/downward
-                            time.sleep(1.25)
-            else:
-                self.updateHover('x', 0)
-                self.updateHover('y', 0)
+                direction_x = random.choice([1, -1])
+                direction_y = random.choice([1, -1])
 
+                for ox, oy in detected_obstacles:
+                    
+                    if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE:
+                        # x is the front..? 
+
+                        if self.last_obstacle_x is not None and self.last_obstacle_y is not None:
+                            if abs(ox - self.last_obstacle_x) <= CONTINUE_DISTANCE and abs(oy - self.last_obstacle_y) <= CONTINUE_DISTANCE:
+                                direction_x = self.last_choice_x
+                                direction_y = self.last_choice_y
+
+                        if ox < self.drone_x or ox > self.drone_x:
+                            self.updateHover('x', direction_x)  # Move right
+                            time.sleep(.5)
+                        if oy < self.drone_y or oy > self.drone_y:
+                            self.updateHover('y', direction_y)  # Move forward
+                            time.sleep(.5)
+
+                        self.last_obstacle_x = ox
+                        self.last_obstacle_y = oy
+                        self.last_choice_x = direction_x
+                        self.last_choice_y = direction_y
+                        
+                        self.updateHover('x', 0)
+                        self.updateHover('y', 0)
 
 
     def updateGrid(self, drone_x, drone_y):
