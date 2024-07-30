@@ -136,8 +136,8 @@ class CrazyflieController(QtWidgets.QMainWindow):
         x = data['stateEstimate.x']
         y = data['stateEstimate.y']
         # Transform the coordinates to fit the grid
-        self.drone_x = int(x * 10) + 30  # Convert meters to grid units and center
-        self.drone_y = int(y * 10) + 30  # Convert meters to grid units and center
+        self.drone_x = abs(round(x * 10) + 30)  # Convert meters to grid units and center
+        self.drone_y = abs(round(y * 10) + 30)  # Convert meters to grid units and center
         # Ensure the coordinates are within bounds
         self.drone_x = max(0, min(60, self.drone_x))
         self.drone_y = max(0, min(60, self.drone_y))
@@ -199,19 +199,21 @@ class CrazyflieController(QtWidgets.QMainWindow):
             direction_x = 1 # updateHover() -> hover[] -> send_hover_setpoint()
             direction_y = 1 # updateHover() -> hover[] -> send_hover_setpoint()
 
-            if detected_obstacles: # If obstacles are detected...
-                for ox, oy in detected_obstacles: # Iterate through every set of obstacles (but a decision is only made PER obstacle so why a for loop?)
-                    # (May have to ensure self.drone_x/y is actually the drone's x/y coordinate in the grid)
-                    if abs(ox - self.drone_x) <= CLOSE_RANGE or abs(oy - self.drone_y) <= CLOSE_RANGE: # If the drone must avoid the obstacle
-                        if ox < self.drone_x or ox > self.drone_x: # If detected on front or back side...
-                            self.updateHover('x', direction_x)  # Move right/left
-                            time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
-                        # If detected on left or right side    
-                        if oy < self.drone_y or oy > self.drone_y:
-                            self.updateHover('y', direction_y)  # Move forward/backward
-                            time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
-                    self.updateHover('x', 0) # Stop the drone in preparation for the next obstacle
-                    self.updateHover('y', 0) # Stop the drone in preparation for the next obstacle
+            ox = detected_obstacles[0][0] # Obstacle x coordinate
+            oy = detected_obstacles[0][1] # Obstacle y coordinate
+
+            # ASSUMING THAT ONE OBSTACLES ARE TO BE AVOIDED ONE AT A TIME:
+            # (May have to ensure self.drone_x/y is actually the drone's x/y coordinate in the grid)
+            if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE: # If the drone must avoid the obstacle
+                if ox < self.drone_x or ox > self.drone_x: # If detected on front or back side...
+                    self.updateHover('x', direction_x)  # Move right/left
+                    time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
+                # If detected on left or right side    
+                if oy < self.drone_y or oy > self.drone_y:
+                    self.updateHover('y', direction_y)  # Move forward/backward
+                    time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
+            self.updateHover('x', 0) # Stop the drone in preparation for the next obstacle
+            self.updateHover('y', 0) # Stop the drone in preparation for the next obstacle
 
     def updateGrid(self, drone_x, drone_y):
         pixmap = QtGui.QPixmap(610, 610)
