@@ -1,4 +1,2 @@
-list = [(1, 2), (3, 4)]
-
-for (x, y) in list:
-    print("TEST")
+floatval = 3.14
+print("Pi is", floatval)

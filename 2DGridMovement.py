@@ -33,29 +33,32 @@ SPEED_FACTOR = 0.3
 GRID_SIZE = 61
 OBSTACLE_THRESHOLD = 3.0  # Distance threshold in meters
 MOVE_DISTANCE = 3
-CLOSE_RANGE = 10  # Distance at which the player makes a decision
+CLOSE_RANGE = 10  # A decision is made to avoid an obstacle at or below this value (representing 10 grid boxes)
 
 class CrazyflieController(QtWidgets.QMainWindow):
 
     def __init__(self, URI):
-        super().__init__()
+        super().__init__() # Super constructor (Executes QMainWindow constructor)
 
-        self.resize(700, 700)
-        self.setWindowTitle('Multi-ranger 2D GRID')
+        self.resize(700, 700) # Resize the window
+        self.setWindowTitle('Multi-ranger 2D GRID') # Name the window
 
+        # Initialize Crazyflie 
         cflib.crtp.init_drivers()
         self.cf = Crazyflie(ro_cache=None, rw_cache='cache')
 
         # Connect callbacks from the Crazyflie API
-        self.cf.connected.add_callback(self.connected)
-        self.cf.disconnected.add_callback(self.disconnected)
+            # CrazyflieController class -> Crazyflie class -> Caller class
+        self.cf.connected.add_callback(self.connected) # Adds connected instance function to list of callbacks
+        self.cf.disconnected.add_callback(self.disconnected) # Adds disconnected instance function to list of callbacks
 
         # Connect to the Crazyflie
         self.cf.open_link(URI)
 
+        # Hover dictionary for drone flight (hover) parameters
         self.hover = {'x': 0.0, 'y': 0.0, 'z': 0.0, 'yaw': 0.0, 'height': 0.3}
 
-        self.hoverTimer = QtCore.QTimer()
+        self.hoverTimer = QtCore.QTimer() # ? Hover for as long as the window is open ?
         self.hoverTimer.timeout.connect(self.sendHoverCommand)
         self.hoverTimer.setInterval(100)
         self.hoverTimer.start()
@@ -67,9 +70,11 @@ class CrazyflieController(QtWidgets.QMainWindow):
         self.updateGrid(GRID_SIZE // 2, GRID_SIZE // 2)
         self.updateGrid(30, 30)  # Start with the drone at the center
 
+        # Set drone coordinates (in our case I believe x is the VERTICAL axis and y is the HORIZONTAL axis)
         self.drone_x = 30
         self.drone_y = 30
 
+        # Initialize dictionary to hold multiranger sensor data
         self.sensor_data = {
             'front': None,
             'back': None,
@@ -78,6 +83,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
             'up': None
         }
 
+        # Thread to execute autonomous movement
         self.autonomous_thread = threading.Thread(target=self.autonomousMovement)
         self.autonomous_thread.daemon = True
         self.autonomous_thread.start()
@@ -86,11 +92,12 @@ class CrazyflieController(QtWidgets.QMainWindow):
         self.cf.commander.send_hover_setpoint(
             self.hover['x'], self.hover['y'], self.hover['yaw'], self.hover['height'])
 
+    # Updates hover dictionary 
     def updateHover(self, k, v):
         if k != 'height':
             self.hover[k] = v * SPEED_FACTOR
         else:
-            self.hover[k] += v
+            self.hover[k] += v 
 
     def disconnected(self, URI):
         print('Disconnected')
@@ -180,33 +187,31 @@ class CrazyflieController(QtWidgets.QMainWindow):
             self.obstacles.add((right_obstacle_x, right_obstacle_y))
 
     def autonomousMovement(self):
-        while True: # Infinite loop
+        while True: # Infinite loop (until window is closed?)
+
+            # (May have to check where the obstacles object comes from)
             detected_obstacles = list(self.obstacles) # Turn the obstacles set into a list
 
-            #DEBUG PRINT THE LIST
-            print("Detected obstacles:", detected_obstacles)
+        # Print the list (for debug purposes)
+            # print("Detected obstacles:", detected_obstacles)
 
-            # Assign either -1 or 1 to direction_x and direction_y
-            direction_x = random.choice([-1, 1])
-            direction_y = random.choice([-1, 1])
+            # These can change
+            direction_x = 1 # updateHover() -> hover[] -> send_hover_setpoint()
+            direction_y = 1 # updateHover() -> hover[] -> send_hover_setpoint()
 
             if detected_obstacles: # If obstacles are detected...
                 for ox, oy in detected_obstacles: # Iterate through every set of obstacles (but a decision is only made PER obstacle so why a for loop?)
-                    # this make sure that the drone is within the distance of the obstacle
-                    if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE:
-                        # if detected on front or back side
-                        if ox < self.drone_x or ox > self.drone_x:
+                    # (May have to ensure self.drone_x/y is actually the drone's x/y coordinate in the grid)
+                    if abs(ox - self.drone_x) <= CLOSE_RANGE or abs(oy - self.drone_y) <= CLOSE_RANGE: # If the drone must avoid the obstacle
+                        if ox < self.drone_x or ox > self.drone_x: # If detected on front or back side...
                             self.updateHover('x', direction_x)  # Move right/left
-                            time.sleep(1.25)
-                        # if detected on left or right side    
+                            time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
+                        # If detected on left or right side    
                         if oy < self.drone_y or oy > self.drone_y:
-                            self.updateHover('y', direction_y)  # Move forward/downward
-                            time.sleep(1.25)
-            else:
-                self.updateHover('x', 0)
-                self.updateHover('y', 0)
-
-
+                            self.updateHover('y', direction_y)  # Move forward/backward
+                            time.sleep(1) # Allow the drone to drift for one second to avoid the obstacle
+                    self.updateHover('x', 0) # Stop the drone in preparation for the next obstacle
+                    self.updateHover('y', 0) # Stop the drone in preparation for the next obstacle
 
     def updateGrid(self, drone_x, drone_y):
         pixmap = QtGui.QPixmap(610, 610)
@@ -280,9 +285,9 @@ class CrazyflieController(QtWidgets.QMainWindow):
                 self.updateHover('height', 0)
 
 if __name__ == '__main__':
-    appQt = QtWidgets.QApplication(sys.argv)
-    mainWindow = CrazyflieController(URI)
+    appQt = QtWidgets.QApplication(sys.argv) # Creating window using PyQt6 library
+    mainWindow = CrazyflieController(URI) # Creating instance of CrazyflieController class and calling it mainWindow
    
-    mainWindow.show()
+    mainWindow.show() # Making the created window visible to the user
     
-    sys.exit(appQt.exec())
+    sys.exit(appQt.exec()) # "Don't close program until wiondow is exitted out of."
