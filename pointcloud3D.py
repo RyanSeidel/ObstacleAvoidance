@@ -1,3 +1,5 @@
+# THE BELOW COMMENTS ARE FROM BITCRAZE
+# -------------------------------------------------
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
@@ -96,12 +98,13 @@ SPEED_FACTOR = 0.3
 class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, URI):
-        QtWidgets.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self) # Calls constructor of mother class (super constructor)
 
+        # Size and title the window
         self.resize(700, 500)
         self.setWindowTitle('Multi-ranger point cloud')
 
-        self.canvas = Canvas(self.updateHover)
+        self.canvas = Canvas(self.updateHover) # Create Canvas object
         self.canvas.create_native()
         self.canvas.native.setParent(self)
 
@@ -211,17 +214,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if (self.cf is not None):
             self.cf.close_link()
 
-
+# Class for the contents of the PyQt6 window
 class Canvas(scene.SceneCanvas):
-    def __init__(self, keyupdateCB):
+    def __init__(self, keyupdateCB): # Constructor
 
-        self.drone_x = None
+        # Drone coordinates
+        self.drone_x = None 
         self.drone_y =  None 
         self.drone_z = None
     
-        scene.SceneCanvas.__init__(self, keys=None)
-        self.size = 800, 600
-        self.unfreeze()
+        scene.SceneCanvas.__init__(self, keys=None) # Parent class constructor
+        self.size = 800, 600 # Size the window
+
+        # Make the window modifiable and configure it
+        self.unfreeze() 
         self.view = self.central_widget.add_view()
         self.view.bgcolor = '#ffffff'
         self.view.camera = TurntableCamera(
@@ -241,7 +247,8 @@ class Canvas(scene.SceneCanvas):
             self.view.add(line)
 
         self.keyCB = keyupdateCB
-
+        
+        # Make the window unmodifiable (prior to execution)
         self.freeze()
 
         scene.visuals.XYZAxis(parent=self.view.scene)
@@ -385,9 +392,11 @@ class Canvas(scene.SceneCanvas):
         if (len(data) > 0):
             # Makes an array of coordinates
             self.meas_data = np.append(self.meas_data, data, axis=0)
+            self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
+            self.autonomousMovement()
         else:
             self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
-        self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
+        
 
         # Store the measurement coordinates
         # print("Measurement Coordinates:", self.meas_data)
@@ -395,11 +404,7 @@ class Canvas(scene.SceneCanvas):
         # Measurement Coordinates [array([-0.9539474, 0.22610241, 0.28791662])]
 
     def autonomousMovement(self):
-            detected_obstacles = list(self.meas_data)
-
-            #DEBUG PRINT THE LIST
-
-            # print("Detected obstacles:", detected_obstacles)
+            detected_obstacles = list(self.meas_data) 
 
             if detected_obstacles:
                 direction_x = random.choice([1, -1])
@@ -439,7 +444,10 @@ class Canvas(scene.SceneCanvas):
     #                     self.updateGrid(self.drone_x, self.drone_y)
 
 if __name__ == '__main__':
-    appQt = QtWidgets.QApplication(sys.argv)
-    win = MainWindow(URI)
-    win.show()
-    appQt.exec()
+
+    # Main PyQt6 window configuration
+    appQt = QtWidgets.QApplication(sys.argv) # Window operations 
+    win = MainWindow(URI) # Window display
+
+    win.show() # Show the window
+    appQt.exec() # Turn the window into something living and breathing? Commence functionality?
