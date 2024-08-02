@@ -52,6 +52,7 @@ import math
 import sys
 import time
 import random
+import threading
 from PIL import Image
 
 import numpy as np
@@ -92,6 +93,12 @@ CLOSE_RANGE = .700
 # Set the speed factor for moving and rotating
 SPEED_FACTOR = 0.3
 
+# Share Resources
+drone_position = [0, 0, 0]  # x, y, z
+detected_obstacles = None
+
+meas_data_LOCK = threading.Lock()
+drone_pos_LOCK = threading.Lock()
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -218,6 +225,10 @@ class Canvas(scene.SceneCanvas):
         self.drone_x = None
         self.drone_y =  None 
         self.drone_z = None
+
+        self.autonomous_thread = threading.Thread(target=self.autonomousMovement)
+        self.autonomous_thread.daemon = True
+        self.autonomous_thread.start()
     
         scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
@@ -293,17 +304,21 @@ class Canvas(scene.SceneCanvas):
                 self.keyCB('yaw', 0)
 
     def set_position(self, pos):
+
+        global drone_position
         self.last_pos = pos
 
-        self.drone_x = pos[0]
-        self.drone_y =  pos[1]
-        self.drone_z = pos[2]
+        with drone_pos_LOCK:
+
+            drone_position[0] = pos[0]
+            drone_position[1] = pos[1]
+            drone_position[2] = pos[2]
 
         #print("Drone position: ", self.last_pos)
 
-        if (PLOT_CF):
-            self.pos_data = np.append(self.pos_data, [pos], axis=0)
-            self.pos_markers.set_data(self.pos_data, face_color='red', size=3)
+            if (PLOT_CF):
+                self.pos_data = np.append(self.pos_data, [pos], axis=0)
+                self.pos_markers.set_data(self.pos_data, face_color='red', size=3)
 
         self.pos_data = np.empty((0,3)) 
         
@@ -372,6 +387,8 @@ class Canvas(scene.SceneCanvas):
 
     # this will give the exact points of the obstacles
     def set_measurement(self, measurements):
+        global detected_obstacles
+
         data = self.rotate_and_create_points(measurements)
         o = self.last_pos
 
@@ -382,59 +399,82 @@ class Canvas(scene.SceneCanvas):
             else:
                 self.lines[i].set_data(np.array([o, o]))
 
-        if (len(data) > 0):
-            # Makes an array of coordinates
-            self.meas_data = np.append(self.meas_data, data, axis=0)
-        else:
-            self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
-        self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
+        with meas_data_LOCK:
+            if (len(data) > 0):
+                # Makes an array of coordinates
+                self.meas_data = np.append(self.meas_data, data, axis=0)
+                self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
 
+                detected_obstacles = list(self.meas_data)
+
+            else:
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_markers.set_data(self.meas_data)
+                detected_obstacles = []
+
+        
         # Store the measurement coordinates
         # print("Measurement Coordinates:", self.meas_data)
 
         # Measurement Coordinates [array([-0.9539474, 0.22610241, 0.28791662])]
 
     def autonomousMovement(self):
-            detected_obstacles = list(self.meas_data)
+        while True:
+            with meas_data_LOCK:
+
+                detected_obstacles_copy = detected_obstacles
 
             #DEBUG PRINT THE LIST
 
-            # print("Detected obstacles:", detected_obstacles)
+            if detected_obstacles_copy:
+                direction_x = random.choice([1])
+                direction_y = random.choice([1])
 
-            if detected_obstacles:
-                direction_x = random.choice([1, -1])
-                direction_y = random.choice([1, -1])
+                for ox, oy, oz in detected_obstacles_copy:
 
-                for ox, oy, oz in detected_obstacles:
+                    with drone_pos_LOCK:
 
-                    print(f"Processing obstacle at ({ox}, {oy}, {oz})")
+                        drone_position_copy = [drone_position[0], drone_position[1], drone_position[2]]
+
+                        print(f"Processing obstacle at ({ox}, {oy}, {oz})")
+                        print(f"Drone position at ({drone_position_copy[0]}, {drone_position_copy[1]}, {drone_position_copy[2]})")
+
+                        # Calculate the distance between the drone and the obstacle
+                        drone_pos = np.array([drone_position])
+                        obstacle_pos = np.array([ox, oy, oz])
+                        distance = np.linalg.norm(drone_position - obstacle_pos)
+
+                    # Drone position at ((-6.257425785064697, 3.0765204429626465, 0.3031400442123413))
+                    # Processing obstacle at (-5.064485290294928, 3.0580519818953515, 0.2972974586255614)
+                    # Drone position at ((-6.257425785064697, 3.0765204429626465, 0.3031400442123413))
+                    # Processing obstacle at (-5.058312860085037, 3.0674651005196787, 0.2970936338361484)
+                    # Drone position at ((-6.257425785064697, 3.0765204429626465, 0.3031400442123413))
+                    # Processing obstacle at (-5.052434920632069, 3.0728931777986115, 0.30016353932620077)
+                    # Drone position at ((-6.257425785064697, 3.0765204429626465, 0.3031400442123413))
 
                     # print(f"Processing the drone position" ({self.drone_x, self.drone_y, self.drone_z}))
                     
-                    # if abs(ox - self.drone_x) <= CLOSE_RANGE and abs(oy - self.drone_y) <= CLOSE_RANGE and abs(oz - self.drone_z) <= CLOSE_RANGE:
+                        # if distance <= CLOSE_RANGE:
     #                     # x is the front..? 
 
     #                     if self.last_obstacle_x is not None and self.last_obstacle_y is not None:
     #                         if abs(ox - self.last_obstacle_x) <= CONTINUE_DISTANCE and abs(oy - self.last_obstacle_y) <= CONTINUE_DISTANCE:
     #                             direction_x = self.last_choice_x
     #                             direction_y = self.last_choice_y
-
                         # if ox < self.drone_x or ox > self.drone_x:
-                        #     self.keyCB('x', direction_x)  # Move right
+                        #     self.keyCB('y', direction_y)  # Move right
                         #     time.sleep(.5)
                             
-    #                     if oy < self.drone_y or oy > self.drone_y:
-    #                         self.updateHover('y', direction_y)  # Move forward
-    #                         time.sleep(.5)
-                            
-
+                        # if oy < self.drone_y or oy > self.drone_y:
+                        #     self.keyCB('x', direction_x)  # Move forward
+                        #     time.sleep(.5)
     #                     self.last_obstacle_x = ox
     #                     self.last_obstacle_y = oy
     #                     self.last_choice_x = direction_x
     #                     self.last_choice_y = direction_y
 
-                        # self.keyCB('x', 0)
-                        # self.keyCB('y', 0)
+                            # self.keyCB('x', 0)
+                            # self.keyCB('y', 0)
 
     #                     self.updateGrid(self.drone_x, self.drone_y)
 
