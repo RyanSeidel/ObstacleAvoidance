@@ -1,5 +1,8 @@
 import logging
 import math
+import pandas as pd
+import os
+
 import sys
 import time
 import random
@@ -26,7 +29,7 @@ from PyQt6 import QtCore, QtWidgets
 
 logging.basicConfig(level=logging.INFO)
 
-URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E705')
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E703')
 
 if len(sys.argv) > 1:
     URI = sys.argv[1]
@@ -174,6 +177,8 @@ class Canvas(scene.SceneCanvas):
         self.distance = None # comparing to new obstacle and last obstacle distance
         self.last_direction_x = None
         self.last_direction_y = None
+        self.excel_data = []
+        self.timer_start = time.time() 
         
         scene.SceneCanvas.__init__(self, keys=None)
         self.size = 800, 600
@@ -300,6 +305,8 @@ class Canvas(scene.SceneCanvas):
         pitch = -m['pitch']
         yaw = m['yaw']
 
+        # reset it
+
         # if (m['up'] < SENSOR_TH):
         #     up = [o[0], o[1], o[2] + m['up'] / 1000.0]
         #     data.append(self.rot(roll, pitch, yaw, o, up) , 'up'))
@@ -310,19 +317,23 @@ class Canvas(scene.SceneCanvas):
 
         if (m['left'] < SENSOR_TH):
             left = [o[0], o[1] + m['left'] / 1000.0, o[2]]
-            data.append((self.rot(roll, pitch, yaw, o, left), 'left'))
+            elapsed_time = time.time() - self.timer_start 
+            data.append((self.rot(roll, pitch, yaw, o, left), 'left', elapsed_time))
 
         if (m['right'] < SENSOR_TH):
             right = [o[0], o[1] - m['right'] / 1000.0, o[2]]
-            data.append((self.rot(roll, pitch, yaw, o, right) , 'right'))
+            elapsed_time = time.time() - self.timer_start 
+            data.append((self.rot(roll, pitch, yaw, o, right) , 'right', elapsed_time))
 
         if (m['front'] < SENSOR_TH):
             front = [o[0] + m['front'] / 1000.0, o[1], o[2]]
-            data.append((self.rot(roll, pitch, yaw, o, front), 'front'))
+            elapsed_time = time.time() - self.timer_start 
+            data.append((self.rot(roll, pitch, yaw, o, front), 'front', elapsed_time))
 
         if (m['back'] < SENSOR_TH):
             back = [o[0] - m['back'] / 1000.0, o[1], o[2]]
-            data.append((self.rot(roll, pitch, yaw, o, back), 'back'))
+            elapsed_time = time.time() - self.timer_start 
+            data.append((self.rot(roll, pitch, yaw, o, back), 'back', elapsed_time))
 
         return data
 
@@ -334,6 +345,9 @@ class Canvas(scene.SceneCanvas):
         o = self.last_pos
 
         if (len(data) > 0):
+
+            Move = 0
+
             # Makes an array of coordinates
             self.meas_data = np.append(self.meas_data, data, axis=0)
             self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
@@ -343,6 +357,9 @@ class Canvas(scene.SceneCanvas):
             #print("The drone position:", self._drone_position)
 
             obstacle = data_with_labels[0][0] # first element and # first coordinates
+            label = data_with_labels[0][1]
+            elapsed_time = data_with_labels[0][2]
+
 
             #print("The obstacle ", obstacle)
 
@@ -355,6 +372,8 @@ class Canvas(scene.SceneCanvas):
             # Distances: dx=0.9316756574206697, dy=-0.022924507261234073, dz=-0.008884612349004672
             # The obstacles: [(array([1.13539016, 1.14460365, 0.27954656]), 'front')]
             # The obstacle  [1.13539016 1.14460365 0.27954656]
+            
+            action = 0
 
             if self.last_obstacle is not None:
                 last_obstacle_coords = np.array(self.last_obstacle)
@@ -365,32 +384,74 @@ class Canvas(scene.SceneCanvas):
             if distance_x < .7 and data_with_labels[0][1] == "front" and obstacle[0] != -9999:
                 self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
                 self.autonomousMovement(data_with_labels[0][1])
+                action = time.time() - self.timer_start
+                Move = 1
             
             elif distance_x < .7 and data_with_labels[0][1] == "back" and obstacle[0] != -9999:
                 self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
                 self.autonomousMovement(data_with_labels[0][1])
+                action = time.time() - self.timer_start
+                Move = 1
 
             elif distance_y < .7 and data_with_labels[0][1] == "right" and obstacle[0] != -9999:
                 self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
                 self.autonomousMovement(data_with_labels[0][1])
+                action = time.time() - self.timer_start
+                Move = 1
 
             elif distance_y < .7 and data_with_labels[0][1] == "left" and obstacle[0] != -9999:
                 self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
-                self.autonomousMovement(data_with_labels[0][1])   
+                self.autonomousMovement(data_with_labels[0][1])
+                action = time.time() - self.timer_start
+                Move = 1
+
+            self.excel_data.append({
+                'object detected': elapsed_time,
+                'action respond' : action,
+                'drone_x': self._drone_position[0],
+                'drone_y': self._drone_position[1],
+                'drone_z': self._drone_position[2],
+                'obstacle_x': obstacle[0],
+                'obstacle_y': obstacle[1],
+                'obstacle_z': obstacle[2],
+                'label': label,
+                'Move': Move
+            })
+
+            # needs to append a row in here in excel and move on to next row..
+            # Append new data to Excel file
+            self.append_to_excel('obstacle_data2.xlsx')
+
+            Move = 0
+
+            action = 0
+
+            elapsed_time = 0
 
             obstacle = [-9999,-9999,-9999]
-
-            # # Remove the specific element from meas_data
-            # if len(self.meas_data) > 0:
-            #     # Find the index of the obstacle to remove
-            #     obstacle_index = np.where((self.meas_data == obstacle).all(axis=1))[0]
-            #     if len(obstacle_index) > 0:
-            #         self.meas_data = np.delete(self.meas_data, obstacle_index[0], axis=0)
-            #         self.meas_markers.set_data(self.meas_data, face_color='blue', size=5)
 
         else:    
             self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
             self.meas_markers.set_data(self.meas_data)
+
+    def append_to_excel(self, file_name):
+        # Convert the list of dictionaries to a DataFrame
+        new_data_df = pd.DataFrame(self.excel_data)
+
+        if os.path.exists(file_name):
+            # If file exists, load existing data into a DataFrame
+            existing_data_df = pd.read_excel(file_name)
+            # Append the new data to the existing data
+            combined_data_df = pd.concat([existing_data_df, new_data_df], ignore_index=True)
+        else:
+            # If file does not exist, the combined data is just the new data
+            combined_data_df = new_data_df
+        
+        # Save the combined data to the Excel file
+        combined_data_df.to_excel(file_name, index=False)
+
+        # Clear the excel_data list after writing to the file to avoid duplicate entries
+        self.excel_data = []
 
     def set_obstacle_array(self, data):
         threshold = 0.1
@@ -415,12 +476,12 @@ class Canvas(scene.SceneCanvas):
             # does this check if it on front / back side?
             if direction == "front" or direction == "back":
                 self.keyCB('y', direction_y)  # Move right
-                time.sleep(.1)
+                time.sleep(.25)
 
             # does this check if it on front / back side?
             if direction == "left" or direction == "right":
                 self.keyCB('x', direction_x)  # Move right
-                time.sleep(.1)
+                time.sleep(.25)
 
             self.keyCB('x', 0)
             self.keyCB('y', 0)
