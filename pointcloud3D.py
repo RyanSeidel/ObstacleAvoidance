@@ -178,6 +178,13 @@ class Canvas(scene.SceneCanvas):
         self.last_direction_x = None
         self.last_direction_y = None
         self.excel_data = []
+        self.sensor_data = {
+            'front': None,
+            'back': None,
+            'left': None,
+            'right': None,
+            'up': None
+        }
         self.timer_start = time.time() 
         
         scene.SceneCanvas.__init__(self, keys=None)
@@ -207,51 +214,51 @@ class Canvas(scene.SceneCanvas):
 
         scene.visuals.XYZAxis(parent=self.view.scene)
 
-    # def on_key_press(self, event):
-    #     if (not event.native.isAutoRepeat()):
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Left):
-    #             self.keyCB('y', 1)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Right):
-    #             self.keyCB('y', -1)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Up):
-    #             self.keyCB('x', 1)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Down):
-    #             self.keyCB('x', -1)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_A):
-    #             self.keyCB('yaw', -70)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_D):
-    #             self.keyCB('yaw', 70)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Z):
-    #             self.keyCB('yaw', -200)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_X):
-    #             self.keyCB('yaw', 200)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_W):
-    #             self.keyCB('height', 0.1)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_S):
-    #             self.keyCB('height', -0.1)
+    def on_key_press(self, event):
+        if (not event.native.isAutoRepeat()):
+            if (event.native.key() == QtCore.Qt.Key.Key_Left):
+                self.keyCB('y', 1)
+            if (event.native.key() == QtCore.Qt.Key.Key_Right):
+                self.keyCB('y', -1)
+            if (event.native.key() == QtCore.Qt.Key.Key_Up):
+                self.keyCB('x', 1)
+            if (event.native.key() == QtCore.Qt.Key.Key_Down):
+                self.keyCB('x', -1)
+            if (event.native.key() == QtCore.Qt.Key.Key_A):
+                self.keyCB('yaw', -70)
+            if (event.native.key() == QtCore.Qt.Key.Key_D):
+                self.keyCB('yaw', 70)
+            if (event.native.key() == QtCore.Qt.Key.Key_Z):
+                self.keyCB('yaw', -200)
+            if (event.native.key() == QtCore.Qt.Key.Key_X):
+                self.keyCB('yaw', 200)
+            if (event.native.key() == QtCore.Qt.Key.Key_W):
+                self.keyCB('height', 0.1)
+            if (event.native.key() == QtCore.Qt.Key.Key_S):
+                self.keyCB('height', -0.1)
 
-    # def on_key_release(self, event):
-    #     if (not event.native.isAutoRepeat()):
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Left):
-    #             self.keyCB('y', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Right):
-    #             self.keyCB('y', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Up):
-    #             self.keyCB('x', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Down):
-    #             self.keyCB('x', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_A):
-    #             self.keyCB('yaw', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_D):
-    #             self.keyCB('yaw', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_W):
-    #             self.keyCB('height', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_S):
-    #             self.keyCB('height', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_Z):
-    #             self.keyCB('yaw', 0)
-    #         if (event.native.key() == QtCore.Qt.Key.Key_X):
-    #             self.keyCB('yaw', 0)
+    def on_key_release(self, event):
+        if (not event.native.isAutoRepeat()):
+            if (event.native.key() == QtCore.Qt.Key.Key_Left):
+                self.keyCB('y', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_Right):
+                self.keyCB('y', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_Up):
+                self.keyCB('x', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_Down):
+                self.keyCB('x', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_A):
+                self.keyCB('yaw', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_D):
+                self.keyCB('yaw', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_W):
+                self.keyCB('height', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_S):
+                self.keyCB('height', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_Z):
+                self.keyCB('yaw', 0)
+            if (event.native.key() == QtCore.Qt.Key.Key_X):
+                self.keyCB('yaw', 0)
 
     def set_position(self, pos):
 
@@ -304,6 +311,13 @@ class Canvas(scene.SceneCanvas):
         roll = m['roll']
         pitch = -m['pitch']
         yaw = m['yaw']
+
+        self.sensor_data['front'] = m['front']/1000
+        self.sensor_data['back'] = m['back']/1000
+        self.sensor_data['left'] = m['left']/1000
+        self.sensor_data['right'] = m['right']/1000
+        self.sensor_data['up'] = m['up']/1000
+        self.sensor_data['down'] = m['down']/1000
 
         # reset it
 
@@ -361,13 +375,17 @@ class Canvas(scene.SceneCanvas):
             elapsed_time = data_with_labels[0][2]
 
 
-            #print("The obstacle ", obstacle)
+            print("The obstacle ", obstacle)
 
-            distance_x = (obstacle[0] - self._drone_position[0])
-            distance_y = (obstacle[1] - self._drone_position[1])
-            distance_z = (obstacle[2] - self._drone_position[2])
+            distance_x = abs(obstacle[0] - self._drone_position[0])
+            distance_y = abs(obstacle[1] - self._drone_position[1])
 
-            # print(f"Distances: dx={distance_x}, dy={distance_y}, dz={distance_z}")
+            # distance_z = (obstacle[2] - self._drone_position[2])
+
+            # distance_x = 2
+            # distance_y = 2
+
+            print(f"Distances: dx={distance_x}, dy={distance_y}")
 
             # Distances: dx=0.9316756574206697, dy=-0.022924507261234073, dz=-0.008884612349004672
             # The obstacles: [(array([1.13539016, 1.14460365, 0.27954656]), 'front')]
@@ -380,30 +398,36 @@ class Canvas(scene.SceneCanvas):
                 current_obstacle_coords = np.array([obstacle[0], obstacle[1], obstacle[2]])
                 self.distance = np.linalg.norm(current_obstacle_coords - last_obstacle_coords)
 
-            # Determine relative position
-            if distance_x < .7 and data_with_labels[0][1] == "front" and obstacle[0] != -9999:
-                self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
+            self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
+
+            #Determine relative position
+            if distance_x < .7 and data_with_labels[0][1] == "front":
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_markers.set_data(self.meas_data)
             
-            elif distance_x < .7 and data_with_labels[0][1] == "back" and obstacle[0] != -9999:
-                self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
+            elif distance_x < .7 and data_with_labels[0][1] == "back":
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_markers.set_data(self.meas_data)
 
-            elif distance_y < .7 and data_with_labels[0][1] == "right" and obstacle[0] != -9999:
-                self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
+            elif distance_y < .7 and data_with_labels[0][1] == "right":  
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_markers.set_data(self.meas_data)
 
-            elif distance_y < .7 and data_with_labels[0][1] == "left" and obstacle[0] != -9999:
-                self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
+            elif distance_y < .7 and data_with_labels[0][1] == "left":
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_markers.set_data(self.meas_data)
 
             self.excel_data.append({
                 'object detected': elapsed_time,
@@ -420,7 +444,11 @@ class Canvas(scene.SceneCanvas):
 
             # needs to append a row in here in excel and move on to next row..
             # Append new data to Excel file
-            self.append_to_excel('obstacle_data2.xlsx')
+            self.append_to_excel('obstacle_gabetiery.xlsx')
+
+            distance_x = 2
+
+            distance_y = 2
 
             Move = 0
 
@@ -430,28 +458,32 @@ class Canvas(scene.SceneCanvas):
 
             obstacle = [-9999,-9999,-9999]
 
-        else:    
-            self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
-            self.meas_markers.set_data(self.meas_data)
+
 
     def append_to_excel(self, file_name):
         # Convert the list of dictionaries to a DataFrame
         new_data_df = pd.DataFrame(self.excel_data)
 
         if os.path.exists(file_name):
-            # If file exists, load existing data into a DataFrame
-            existing_data_df = pd.read_excel(file_name)
-            # Append the new data to the existing data
-            combined_data_df = pd.concat([existing_data_df, new_data_df], ignore_index=True)
+            try:
+                # If file exists, load existing data into a DataFrame
+                existing_data_df = pd.read_excel(file_name)
+                # Append the new data to the existing data
+                combined_data_df = pd.concat([existing_data_df, new_data_df], ignore_index=True)
+            except Exception as e:
+                print(f"Error reading {file_name}: {e}")
+                combined_data_df = new_data_df
         else:
             # If file does not exist, the combined data is just the new data
             combined_data_df = new_data_df
-        
+
         # Save the combined data to the Excel file
         combined_data_df.to_excel(file_name, index=False)
 
         # Clear the excel_data list after writing to the file to avoid duplicate entries
         self.excel_data = []
+
+
 
     def set_obstacle_array(self, data):
         threshold = 0.1
@@ -476,12 +508,12 @@ class Canvas(scene.SceneCanvas):
             # does this check if it on front / back side?
             if direction == "front" or direction == "back":
                 self.keyCB('y', direction_y)  # Move right
-                time.sleep(.25)
+                time.sleep(.5)
 
             # does this check if it on front / back side?
             if direction == "left" or direction == "right":
                 self.keyCB('x', direction_x)  # Move right
-                time.sleep(.25)
+                time.sleep(.5)
 
             self.keyCB('x', 0)
             self.keyCB('y', 0)
