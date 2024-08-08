@@ -21,7 +21,7 @@ from PyQt6 import QtCore, QtWidgets, QtGui
 
 logging.basicConfig(level=logging.INFO)
 
-URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E703')
+URI = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E705')
 
 if len(sys.argv) > 1:
     URI = sys.argv[1]
@@ -34,7 +34,7 @@ GRID_SIZE = 61
 OBSTACLE_THRESHOLD = 3.0  # Distance threshold in meters
 MOVE_DISTANCE = 3
 CLOSE_RANGE = 10  # Distance at which the player makes a decision
-CONTINUE_DISTANCE = 1 # Closest distance to last obstacle
+CONTINUE_DISTANCE = 2 # Closest distance to last obstacle
 
 class CrazyflieController(QtWidgets.QMainWindow):
 
@@ -85,9 +85,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
             'up': None
         }
 
-        self.autonomous_thread = threading.Thread(target=self.autonomousMovement)
-        self.autonomous_thread.daemon = True
-        self.autonomous_thread.start()
+
 
     def sendHoverCommand(self):
         self.cf.commander.send_hover_setpoint(
@@ -186,6 +184,8 @@ class CrazyflieController(QtWidgets.QMainWindow):
             right_obstacle_y = self.drone_y
             self.obstacles.add((right_obstacle_x, right_obstacle_y))
 
+        self.updateGrid(self.drone_x, self.drone_y)
+
     def autonomousMovement(self):
         while True:
             detected_obstacles = list(self.obstacles)
@@ -211,17 +211,21 @@ class CrazyflieController(QtWidgets.QMainWindow):
                         if ox < self.drone_x or ox > self.drone_x:
                             self.updateHover('x', direction_x)  # Move right
                             time.sleep(.5)
+                            
                         if oy < self.drone_y or oy > self.drone_y:
                             self.updateHover('y', direction_y)  # Move forward
                             time.sleep(.5)
+                            
 
                         self.last_obstacle_x = ox
                         self.last_obstacle_y = oy
                         self.last_choice_x = direction_x
                         self.last_choice_y = direction_y
-                        
+
                         self.updateHover('x', 0)
                         self.updateHover('y', 0)
+
+                        self.updateGrid(self.drone_x, self.drone_y)
 
 
     def updateGrid(self, drone_x, drone_y):
@@ -249,7 +253,7 @@ class CrazyflieController(QtWidgets.QMainWindow):
         if 0 <= drone_x < GRID_SIZE and 0 <= drone_y < GRID_SIZE:
             pen.setColor(QtCore.Qt.GlobalColor.red)
             painter.setPen(pen)
-            painter.drawText(drone_x * 10, drone_y * 10, 'X')
+            painter.drawText(drone_y * 10, drone_x * 10, 'X')
 
         painter.end()
 
