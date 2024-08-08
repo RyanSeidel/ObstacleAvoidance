@@ -401,32 +401,18 @@ class Canvas(scene.SceneCanvas):
             self.last_obstacle = [obstacle[0], obstacle[1], obstacle[2]] 
 
             #Determine relative position
-            if distance_x < .7 and data_with_labels[0][1] == "front":
-                self.autonomousMovement(data_with_labels[0][1])
-                action = time.time() - self.timer_start
-                Move = 1
-                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
-                self.meas_markers.set_data(self.meas_data)
-            
-            elif distance_x < .7 and data_with_labels[0][1] == "back":
+            if distance_x < .7 and distance_x > .1 and data_with_labels[0][1] == "front" or data_with_labels[0][1] == "back":
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
                 self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
                 self.meas_markers.set_data(self.meas_data)
 
-            elif distance_y < .7 and data_with_labels[0][1] == "right":  
+            if distance_y < .7 and distance_y > .1 and data_with_labels[0][1] == "right" or data_with_labels[0][1] == "left":  
                 self.autonomousMovement(data_with_labels[0][1])
                 action = time.time() - self.timer_start
                 Move = 1
-                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
-                self.meas_markers.set_data(self.meas_data)
-
-            elif distance_y < .7 and data_with_labels[0][1] == "left":
-                self.autonomousMovement(data_with_labels[0][1])
-                action = time.time() - self.timer_start
-                Move = 1
-                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements
+                self.meas_data = np.empty((0,3)) # Clear the Data if no measurements 
                 self.meas_markers.set_data(self.meas_data)
 
             self.excel_data.append({
@@ -444,7 +430,7 @@ class Canvas(scene.SceneCanvas):
 
             # needs to append a row in here in excel and move on to next row..
             # Append new data to Excel file
-            self.append_to_excel('obstacle_gabetiery.xlsx')
+            self.append_to_excel('trial39.xlsx')
 
             distance_x = 2
 
@@ -457,6 +443,9 @@ class Canvas(scene.SceneCanvas):
             elapsed_time = 0
 
             obstacle = [-9999,-9999,-9999]
+
+        self.meas_data = np.empty((0,3)) # Clear the Data if no measurements 
+        self.meas_markers.set_data(self.meas_data)
 
 
 
@@ -508,12 +497,12 @@ class Canvas(scene.SceneCanvas):
             # does this check if it on front / back side?
             if direction == "front" or direction == "back":
                 self.keyCB('y', direction_y)  # Move right
-                time.sleep(.5)
+                time.sleep(.1)
 
             # does this check if it on front / back side?
             if direction == "left" or direction == "right":
                 self.keyCB('x', direction_x)  # Move right
-                time.sleep(.5)
+                time.sleep(.1)
 
             self.keyCB('x', 0)
             self.keyCB('y', 0)
